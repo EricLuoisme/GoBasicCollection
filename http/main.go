@@ -14,7 +14,7 @@ func main() {
 	router.HandleFunc("GET /user/{id}", HandleGetUserByID)
 	router.HandleFunc("GET /user", makeHandler(handleListUsers))
 
-	_ := http.ListenAndServe(":9099", router)
+	_ = http.ListenAndServe(":9099", router)
 }
 
 type APIError struct {
