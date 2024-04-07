@@ -12,7 +12,6 @@ func main() {
 	// 使用Echo框架
 	e := echo.New()
 	e.GET("/user", handleGetUserEcho)
-
 	// 如果是apiErr可做额外逻辑将其parse为json返回等
 	e.HTTPErrorHandler = func(err error, c echo.Context) {
 		if apiErr, ok := err.(APIError); ok {
