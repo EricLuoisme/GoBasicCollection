@@ -1,4 +1,4 @@
-package thestruct
+package funcOps
 
 import (
 	"fmt"

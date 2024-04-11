@@ -14,6 +14,8 @@ func main() {
 	e.GET("/user", handleGetUserEcho)
 	// 如果是apiErr可做额外逻辑将其parse为json返回等
 	e.HTTPErrorHandler = func(err error, c echo.Context) {
+
+		// 这里用的是 Type Assertion 类型断言
 		if apiErr, ok := err.(APIError); ok {
 			c.JSON(apiErr.Status, map[string]any{"error": apiErr.Msg})
 		}
