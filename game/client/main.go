@@ -2,12 +2,12 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/roylic/gofolder/game/types"
 	"log"
 	"math"
 	"math/rand"
+	"time"
 )
 
 const wsServerEndpoint = "ws://localhost:40000/ws"
@@ -60,5 +60,29 @@ func main() {
 	if err := c.login(); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("works")
+	// looping
+	for {
+		// 持续发送单条信息
+		state := types.PlayerState{
+			Health: 100,
+			Pos: types.Position{
+				X: rand.Intn(10),
+				Y: rand.Intn(10),
+			},
+		}
+		b, err := json.Marshal(state)
+		if err != nil {
+			panic(err)
+		}
+		// 二次序列化
+		msg := types.WSMessage{
+			Type: "playerstate",
+			Data: b,
+		}
+		if err := conn.WriteJSON(msg); err != nil {
+			panic(err)
+		}
+		// 随后等待
+		time.Sleep(time.Millisecond * 200)
+	}
 }

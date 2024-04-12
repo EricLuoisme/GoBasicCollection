@@ -50,12 +50,23 @@ func (ps *PlayerSession) readLoop() {
 
 func (ps *PlayerSession) handleMessage(msg types.WSMessage) {
 	switch msg.Type {
+	// 处理login数据
 	case "login":
 		var loginMsg types.Login
 		if err := json.Unmarshal(msg.Data, &loginMsg); err != nil {
 			panic(err)
 		}
+		// 反序列化成功后, 进行赋值并记录下来当前活跃用户连接
+		ps.clientID = loginMsg.ClientID
+		ps.username = loginMsg.UserName
 		fmt.Println(loginMsg)
+	// 处理player数据
+	case "playerstate":
+		var ps types.PlayerState
+		if err := json.Unmarshal(msg.Data, &ps); err != nil {
+			panic(err)
+		}
+		fmt.Println(ps)
 	}
 }
 
