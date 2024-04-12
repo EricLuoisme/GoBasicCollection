@@ -1,19 +1,16 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
+	"github.com/roylic/gofolder/game/types"
 	"log"
 	"math"
 	"math/rand"
 )
 
 const wsServerEndpoint = "ws://localhost:40000/ws"
-
-type Login struct {
-	ClientID int    `json:"clientID"`
-	UserName string `json:"username"`
-}
 
 type GameClient struct {
 	conn     *websocket.Conn
@@ -30,15 +27,25 @@ func newGameClient(conn *websocket.Conn, username string) *GameClient {
 }
 
 func (c *GameClient) login() error {
-	return c.conn.WriteJSON(
-		Login{
+
+	// 规范为json格式并转换为bytes数组传输
+	b, err := json.Marshal(
+		types.Login{
 			ClientID: c.clientID,
 			UserName: c.username,
+		})
+	if err != nil {
+		return err
+	}
+	// 具体types传入, 向对面传输JSON格式内容(其中data是bytes数组, 获取之后又要转json)
+	return c.conn.WriteJSON(
+		types.WSMessage{
+			Type: "login",
+			Data: b,
 		})
 }
 
 func main() {
-
 	// Client使用WebSocket与Server进行通讯
 	dialer := websocket.Dialer{
 		ReadBufferSize:  1024,
@@ -48,7 +55,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	// 建立连接
 	c := newGameClient(conn, "Tom")
 	if err := c.login(); err != nil {

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/anthdm/hollywood/actor"
 	"github.com/gorilla/websocket"
+	"github.com/roylic/gofolder/game/types"
 	"math"
 	"math/rand"
 	"net/http"
@@ -26,13 +28,41 @@ func newPlayerSession(sid int, conn *websocket.Conn) actor.Producer {
 	}
 }
 
-func (p PlayerSession) Receive(context *actor.Context) {
+func (ps *PlayerSession) Receive(ctx *actor.Context) {
+	switch ctx.Message().(type) {
+	case actor.Started:
+		ps.readLoop()
+	}
+}
 
+func (ps *PlayerSession) readLoop() {
+	var msg types.WSMessage
+	for {
+		// 尝试将内容读到msg
+		if err := ps.conn.ReadJSON(&msg); err != nil {
+			fmt.Println("read error", err)
+			return
+		}
+		// 异步处理
+		go ps.handleMessage(msg)
+	}
+}
+
+func (ps *PlayerSession) handleMessage(msg types.WSMessage) {
+	switch msg.Type {
+	case "login":
+		var loginMsg types.Login
+		if err := json.Unmarshal(msg.Data, &loginMsg); err != nil {
+			panic(err)
+		}
+		fmt.Println(loginMsg)
+	}
 }
 
 type GameServer struct {
 	upgrader websocket.Upgrader
 	ctx      *actor.Context
+	sessions map[*actor.PID]struct{}
 }
 
 func newGameServer() actor.Receiver {
@@ -40,30 +70,32 @@ func newGameServer() actor.Receiver {
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
-		}}
+		},
+		sessions: make(map[*actor.PID]struct{}),
+	}
 }
 
-func (s *GameServer) Receive(ctx *actor.Context) {
+func (gs *GameServer) Receive(ctx *actor.Context) {
 	// 这里是根据Message()的类型进行switch, 内部的Message方法返回的是any
 	switch msg := ctx.Message().(type) {
 	case actor.Started:
-		s.startHttp()
-		s.ctx = ctx
+		gs.startHttp()
+		gs.ctx = ctx
 		_ = msg
 	}
 }
 
-func (s *GameServer) startHttp() {
+func (gs *GameServer) startHttp() {
 	fmt.Println("starting HTTP server on port 40000")
 	go func() {
-		http.HandleFunc("/ws", s.handleWS)
+		http.HandleFunc("/ws", gs.handleWS)
 		http.ListenAndServe(":40000", nil)
 	}()
 }
 
-func (s *GameServer) handleWS(w http.ResponseWriter, r *http.Request) {
+func (gs *GameServer) handleWS(w http.ResponseWriter, r *http.Request) {
 	// 处理将http请求升级为websocket
-	conn, err := s.upgrader.Upgrade(w, r, nil)
+	conn, err := gs.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		fmt.Println("ws upgrade err", err)
 		return
@@ -71,7 +103,9 @@ func (s *GameServer) handleWS(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("new client trying to connect")
 	// 每次新client接入, spawn复制并传输状态
 	sid := rand.Intn(math.MaxInt / 10000)
-	pid := s.ctx.SpawnChild(newPlayerSession(sid, conn), fmt.Sprintf("session_%d", sid))
+	pid := gs.ctx.SpawnChild(newPlayerSession(sid, conn), fmt.Sprintf("session_%d", sid))
+	// 记录所有session, 进行内容广播
+	gs.sessions[pid] = struct{}{}
 	fmt.Printf("client with sid %d and pid %s connected\n", sid, pid)
 }
 
