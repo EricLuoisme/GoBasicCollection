@@ -4,11 +4,35 @@ import (
 	"fmt"
 	"github.com/anthdm/hollywood/actor"
 	"github.com/gorilla/websocket"
+	"math"
+	"math/rand"
 	"net/http"
 )
 
+type PlayerSession struct {
+	sessionID int
+	clientID  int
+	username  string
+	inLobby   bool
+	conn      *websocket.Conn
+}
+
+func newPlayerSession(sid int, conn *websocket.Conn) actor.Producer {
+	return func() actor.Receiver {
+		return &PlayerSession{
+			sessionID: sid,
+			conn:      conn,
+		}
+	}
+}
+
+func (p PlayerSession) Receive(context *actor.Context) {
+
+}
+
 type GameServer struct {
 	upgrader websocket.Upgrader
+	ctx      *actor.Context
 }
 
 func newGameServer() actor.Receiver {
@@ -24,6 +48,7 @@ func (s *GameServer) Receive(ctx *actor.Context) {
 	switch msg := ctx.Message().(type) {
 	case actor.Started:
 		s.startHttp()
+		s.ctx = ctx
 		_ = msg
 	}
 }
@@ -44,12 +69,14 @@ func (s *GameServer) handleWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Println("new client trying to connect")
-	fmt.Println(conn)
+	// 每次新client接入, spawn复制并传输状态
+	sid := rand.Intn(math.MaxInt / 10000)
+	pid := s.ctx.SpawnChild(newPlayerSession(sid, conn), fmt.Sprintf("session_%d", sid))
+	fmt.Printf("client with sid %d and pid %s connected\n", sid, pid)
 }
 
 func main() {
-	config := actor.NewEngineConfig
-	e, _ := actor.NewEngine(config())
+	e, _ := actor.NewEngine(actor.NewEngineConfig())
 	e.Spawn(newGameServer, "server")
 	select {}
 }
