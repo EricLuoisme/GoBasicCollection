@@ -12,7 +12,11 @@ type GameServer struct {
 }
 
 func newGameServer() actor.Receiver {
-	return &GameServer{}
+	return &GameServer{
+		upgrader: websocket.Upgrader{
+			ReadBufferSize:  1024,
+			WriteBufferSize: 1024,
+		}}
 }
 
 func (s *GameServer) Receive(ctx *actor.Context) {

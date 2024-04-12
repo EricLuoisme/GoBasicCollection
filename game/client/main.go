@@ -1,13 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
 	"math"
 	"math/rand"
 )
 
-const wsServerEndpoint = "ws://localhost:40000"
+const wsServerEndpoint = "ws://localhost:40000/ws"
 
 type Login struct {
 	ClientID int    `json:"clientID"`
@@ -53,4 +54,5 @@ func main() {
 	if err := c.login(); err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println("works")
 }
