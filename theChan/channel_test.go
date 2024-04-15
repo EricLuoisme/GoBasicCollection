@@ -21,3 +21,7 @@ func TestAddUser(t *testing.T) {
 	// 最后进行printing
 	server.Printing()
 }
+
+func TestAddUser_Safe(t *testing.T) {
+
+}
