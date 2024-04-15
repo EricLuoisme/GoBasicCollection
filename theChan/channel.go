@@ -2,6 +2,46 @@ package main
 
 import "fmt"
 
+type Server struct {
+	users  map[string]string
+	userch chan string
+}
+
+func TheNewSever() *Server {
+	return &Server{
+		users:  make(map[string]string),
+		userch: make(chan string),
+	}
+}
+
+func (s *Server) Start() {
+	go s.loop()
+}
+
+// loop 方法类似单线程for(true), 持续的消费channel的内容, 没有内容的情况下进行阻塞
+func (s *Server) loop() {
+	for {
+		user := <-s.userch
+		s.users[user] = user
+		fmt.Printf("adding new user %s\n", user)
+	}
+}
+
+// Printing 用来遍历当前map存在的元素
+func (s *Server) Printing() {
+	// 这里的m是map的interface, 类似entrySet
+	for _, m := range s.users {
+		// 要进入到这一层, 才是key和value
+		for k, v := range m {
+			fmt.Println(k, "value is", v)
+		}
+	}
+}
+
+func (s *Server) addUser(user string) {
+	s.users[user] = user
+}
+
 // main notes:
 // - buffered & unbuffered channels
 // - read & write protection
