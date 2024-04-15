@@ -15,7 +15,7 @@ type Message struct {
 type Server struct {
 	listenAddr string
 	ln         net.Listener
-	quitch     chan struct{} // 使用 chan struct 可以使得内存使用为0, 目的是该chan只是作为signal的作用, 不涉及传输数据
+	quitch     chan struct{} // 使用 theChan struct 可以使得内存使用为0, 目的是该chan只是作为signal的作用, 不涉及传输数据
 	msgch      chan Message  // 创建一个msg使用的channel
 }
 
