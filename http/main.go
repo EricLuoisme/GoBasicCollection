@@ -18,8 +18,8 @@ func main() {
 }
 
 type APIError struct {
-	Status int
-	Msg    string
+	Status int    `json:"status"`
+	Msg    string `json:"msg"`
 }
 
 func (e APIError) Error() string {

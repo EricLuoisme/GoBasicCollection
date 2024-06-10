@@ -3,9 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
-
 	"github.com/labstack/echo/v4"
+	"net/http"
 )
 
 func main() {
@@ -19,7 +18,10 @@ func main() {
 		if apiErr, ok := err.(APIError); ok {
 			c.JSON(apiErr.Status, map[string]any{"error": apiErr.Msg})
 		}
-		c.JSON(http.StatusInternalServerError, map[string]any{"error": "Internal Server Error"})
+		c.JSON(http.StatusInternalServerError, map[string]any{
+			"status": http.StatusInternalServerError,
+			"error":  "Internal Server Error",
+		})
 	}
 
 	// 传统使用net/http包的执行方式
