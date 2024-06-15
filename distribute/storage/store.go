@@ -1,15 +1,21 @@
 package main
 
 import (
-	"bytes"
-	"crypto/md5"
 	"crypto/sha1"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"strings"
 )
+
+var DefaultPathTransformFunc = func(key string) PathKey {
+	return PathKey{
+		PathName: key,
+		Original: key,
+	}
+}
 
 // CASPathTransformFunc 将Key进行hash, 再对hashString进行分段
 // 作用可以看作是相较于直接使用Key作为存储路径, 使用Hash可以平均的分布
@@ -41,15 +47,12 @@ type PathKey struct {
 	Original string
 }
 
-type StoreOpts struct {
-	PathTransferFunc PathTransferFunc
+func (k PathKey) filename() string {
+	return fmt.Sprintf("%s/%s", k.PathName, k.Original)
 }
 
-var DefaultPathTransformFunc = func(key string) PathKey {
-	return PathKey{
-		PathName: key,
-		Original: key,
-	}
+type StoreOpts struct {
+	PathTransferFunc PathTransferFunc
 }
 
 type Store struct {
@@ -64,27 +67,21 @@ func NewStore(opts StoreOpts) *Store {
 
 func (s *Store) writeStream(key string, r io.Reader) error {
 	// 获取Path名称并进行os级别创建
-	pathName := s.PathTransferFunc(key)
-	if err := os.MkdirAll(pathName.PathName, os.ModePerm); err != nil {
+	pathKey := s.PathTransferFunc(key)
+	if err := os.MkdirAll(pathKey.PathName, os.ModePerm); err != nil {
 		return err
 	}
-	// 添加Buf进行读写
-	buf := new(bytes.Buffer)
-	io.Copy(buf, r)
-	// 名称也进行hash -> 使用md5
-	filenameBs := md5.Sum(buf.Bytes())
-	filename := hex.EncodeToString(filenameBs[:])
-	fullPath := pathName.PathName + "/" + filename
 	// 打开/创建文件, 路径默认为当前pkg路径下
-	f, err := os.Create(fullPath)
+	fileFullPath := pathKey.filename()
+	f, err := os.Create(fileFullPath)
 	if err != nil {
 		return err
 	}
 	// 拷贝
-	written, err := io.Copy(f, buf)
+	written, err := io.Copy(f, r)
 	if err != nil {
 		return err
 	}
-	log.Printf("written (%d) bytes to disk: %s", written, fullPath)
+	log.Printf("written (%d) bytes to disk: %s", written, fileFullPath)
 	return nil
 }

@@ -26,7 +26,7 @@ func TestNewStore(t *testing.T) {
 		PathTransferFunc: CASPathTransformFunc,
 	}
 	s := NewStore(opts)
-	data := bytes.NewReader([]byte("some jpg bytes"))
+	data := bytes.NewReader([]byte("some jpg bytes again"))
 	// check
 	if err := s.writeStream("specialPic", data); err != nil {
 		t.Error(err)
