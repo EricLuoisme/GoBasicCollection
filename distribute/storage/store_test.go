@@ -20,7 +20,8 @@ func TestPathTransformFunc(t *testing.T) {
 func TestNewStore(t *testing.T) {
 	// call
 	opts := StoreOpts{
-		PathTransferFunc: DefaultPathTransformFunc,
+		//PathTransferFunc: DefaultPathTransformFunc,
+		PathTransferFunc: CASPathTransformFunc,
 	}
 	s := NewStore(opts)
 	data := bytes.NewReader([]byte("some jpg bytes"))

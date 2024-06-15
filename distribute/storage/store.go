@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"crypto/md5"
 	"crypto/sha1"
 	"encoding/hex"
 	"io"
@@ -17,7 +19,7 @@ func CASPathTransformFunc(key string) string {
 	hash := sha1.Sum([]byte(key))
 	hashStr := hex.EncodeToString(hash[:])
 
-	blockSize := 5
+	blockSize := 8
 	sliceLen := len(hashStr) / blockSize
 
 	path := make([]string, sliceLen)
@@ -54,14 +56,20 @@ func (s *Store) writeStream(key string, r io.Reader) error {
 	if err := os.MkdirAll(pathName, os.ModePerm); err != nil {
 		return err
 	}
+	// 添加Buf进行读写
+	buf := new(bytes.Buffer)
+	io.Copy(buf, r)
+	// 名称也进行hash -> 使用md5
+	filenameBs := md5.Sum(buf.Bytes())
+	filename := hex.EncodeToString(filenameBs[:])
+	fullPath := pathName + "/" + filename
 	// 打开/创建文件, 路径默认为当前pkg路径下
-	fullPath := pathName + "/" + "thefilename"
 	f, err := os.Create(fullPath)
 	if err != nil {
 		return err
 	}
 	// 拷贝
-	written, err := io.Copy(f, r)
+	written, err := io.Copy(f, buf)
 	if err != nil {
 		return err
 	}
