@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"log"
 	"os"
 )
 
@@ -32,11 +33,16 @@ func (s *Store) writeStream(key string, r io.Reader) error {
 		return err
 	}
 	// 打开文件
-	filename := "thefilename"
-	f, err := os.Open(pathName + "/" + filename)
+	fullPath := pathName + "/" + "thefilename"
+	f, err := os.Create(fullPath)
 	if err != nil {
 		return err
 	}
-
+	// 拷贝
+	written, err := io.Copy(f, r)
+	if err != nil {
+		return err
+	}
+	log.Printf("written (%d) bytes to disk: %s", written, fullPath)
 	return nil
 }
