@@ -2,8 +2,15 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 )
+
+func TestPathTransformFunc(t *testing.T) {
+	key := "anotherPic"
+	pathName := CASPathTransformFunc(key)
+	fmt.Println(pathName)
+}
 
 // TestNewStore 直接进行简单的保存测试
 func TestNewStore(t *testing.T) {
